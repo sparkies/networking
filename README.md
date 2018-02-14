@@ -21,6 +21,7 @@ struct Packet {
   uint32_t id;
   uint8_t length;
   char *data;
-};```
+};
+```
 
 Because of length being a single byte, the maximum size the payload can be is 255 bytes, which means the maximum packet size is 268 when factoring in header data.
