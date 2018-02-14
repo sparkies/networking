@@ -16,15 +16,15 @@ Or in code,
 
 ```cpp
 struct Packet {
-  uint32_t origin;
-  uint32_t destination;
-  uint32_t id;
-  uint8_t length;
-  char *data;
+  uint32_t origin;      //  The id of the initial sender of this packet
+  uint32_t destination; //  The destination id which should consume this packet
+  uint32_t id;          //  The packet id in relation to the origin
+  uint8_t length;       //  The length of the payload
+  char *data;           //  The packet's payload
 };
 ```
 
-Because of length being a single byte, the maximum size the payload can be is 255 bytes, which means the maximum packet size is 268 when factoring in header data. The data member is not a fixed size in order to help save space in memory.
+Because of length being a single byte, the maximum size the payload can be is 255 bytes. This means the maximum packet size is 268 when factoring in header data. The minimum packet size is 14, since a length of 0 will be considered malformed. It hasn't been tested whether larger packet sizes will be transmitted properly via the xbee, so to keep it safe packets should optimally be no longer than 100 bytes.
 
 ## Configuration Structure
 Configuration settings are stored in EEPROM so they can be stored through power cycles. This information must be updated through an external program, or applied manually by flashing a separate Arduino project which writes the data to memory.
