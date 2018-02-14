@@ -26,20 +26,36 @@ void Configuration::setUUID(uint32_t uuid) {
   _settings.uuid = uuid;
 }
 
-uint32_t Configuration::getMinV() {
-  return _settings.min_v;
+uint32_t Configuration::getMinVoltage() {
+  return _settings.min_vol;
 }
 
-void Configuration::setMinV(double minv) {
-  _settings.min_v = minv;
+void Configuration::setMinVoltage(double minv) {
+  _settings.min_vol = minv;
 }
 
-uint32_t Configuration::getMaxV() {
-  return _settings.max_v;
+uint32_t Configuration::getMaxVoltage() {
+  return _settings.max_vol;
 }
 
-void Configuration::setMaxV(double maxv) {
-  _settings.max_v = maxv;
+void Configuration::setMaxVoltage(double maxv) {
+  _settings.max_vol = maxv;
+}
+
+uint32_t Configuration::getMinValue() {
+  return _settings.min_val;
+}
+
+void Configuration::setMinValue(double minv) {
+  _settings.min_val = minv;
+}
+
+uint32_t Configuration::getMaxValue() {
+  return _settings.max_val;
+}
+
+void Configuration::setMaxValue(double maxv) {
+  _settings.max_val = maxv;
 }
 
 size_t Configuration::getName(char *dest, size_t dest_len) {
@@ -57,10 +73,31 @@ size_t Configuration::getName(char *dest, size_t dest_len) {
 
 void Configuration::setName(char *name, size_t len) {
   //  Clear the name out before we set it.
-  memset(_settings.name, 0, 100);
+  memset(_settings.name, 0, sizeof(_settings.name));
   
   //  Copy new name, but only up to 100 characters.
   memcpy(_settings.name, name, min(100, len));
+}
+
+size_t Configuration::getUnits(char *dest, size_t dest_len) {
+  size_t len = strlen(_settings.units);
+
+  //  If destination length is shorter than strlen + null terminator
+  if (dest_len < len + 1) {
+    //  Then only copy up to dest_len bytes
+    memcpy(dest, _settings.units, dest_len);
+  } else {
+    //  Otherwise, copy full name + trailing null
+    memcpy(dest, _settings.units, len + 1);
+  }
+}
+
+void Configuration::setUnits(char *units, size_t len) {
+  //  Clear the units out before we set them.
+  memset(_settings.units, 0, sizeof(_settings.units));
+  
+  //  Copy new name, but only up to 100 characters.
+  memcpy(_settings.units, units, min(10, len));
 }
 
 void Configuration::debugPrint() {
@@ -69,7 +106,13 @@ void Configuration::debugPrint() {
   Serial.print("Name: ");
   Serial.println(_settings.name);
   Serial.print("Min Voltage: ");
-  Serial.println(_settings.min_v);
+  Serial.println(_settings.min_vol);
   Serial.print("Max Voltage: ");
-  Serial.println(_settings.max_v);
+  Serial.println(_settings.max_vol);
+  Serial.print("Min Value: ");
+  Serial.println(_settings.min_val);
+  Serial.print("Max Value: ");
+  Serial.println(_settings.max_val);
+  Serial.print("Units: ");
+  Serial.println(_settings.units);
 }
