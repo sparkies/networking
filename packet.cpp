@@ -52,9 +52,8 @@ bool Packet::read() {
     return false;
   }
 
-  //  If payload size is 0 or -1, then it's invalid
-  if (!len || len == -1) {
-    Serial.println("Invalid length.");
+  //  If payload size is 0, then it's invalid
+  if (!len) {
     return false;
   }
 
