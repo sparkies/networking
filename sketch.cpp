@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <SoftwareSerial.h>
 
+#include "cache.hpp"
 #include "packet.hpp"
 #include "settings.hpp"
 
@@ -38,6 +39,19 @@ void handleXBee() {
     }
 
     packet.debugPrint();
+
+    CacheEntry entry;
+    
+    if (Cache.has(packet.origin, &entry)) {
+      if (entry.id >= packet.id) {
+        Serial.println(F("Ignoring old packet."));
+        return;
+      } else {
+        entry.id = packet.id;
+      }
+    } else {
+      Cache.insert(packet.origin, packet.id);
+    }
 
     if (packet.is_ours()) {
       Serial.println("Received packet.");
