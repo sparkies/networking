@@ -65,9 +65,11 @@ size_t Configuration::getName(char *dest, size_t dest_len) {
   if (dest_len < len + 1) {
     //  Then only copy up to dest_len bytes
     memcpy(dest, _settings.name, dest_len);
+    return dest_len;
   } else {
     //  Otherwise, copy full name + trailing null
     memcpy(dest, _settings.name, len + 1);
+    return len + 1;
   }
 }
 
@@ -86,9 +88,11 @@ size_t Configuration::getUnits(char *dest, size_t dest_len) {
   if (dest_len < len + 1) {
     //  Then only copy up to dest_len bytes
     memcpy(dest, _settings.units, dest_len);
+    return dest_len;
   } else {
     //  Otherwise, copy full name + trailing null
     memcpy(dest, _settings.units, len + 1);
+    return len + 1;
   }
 }
 
