@@ -24,36 +24,37 @@ uint32_t Packet::readU32(size_t offset) {
 
 bool Packet::read() {
   if (!XBee.available()) {
-    Serial.println("XBee not available.");
+    Serial.println(F("XBee not available."));
     return false;
   }
 
   //  Read in the origin
   if (XBee.readBytes((byte *)&origin, 4) != 4) {
-    Serial.println("Could not read origin.");
+    Serial.println(F("Could not read origin."));
     return false;
   }
   
   //  Read in the destination
   if (XBee.readBytes((byte *)&dest, 4) != 4) {
-    Serial.println("Could not read destination.");
+    Serial.println(F("Could not read destination."));
     return false;
   }
   
   //  Read in the packet id
   if (XBee.readBytes((byte *)&id, 4) != 4) {
-    Serial.println("Could not read id.");
+    Serial.println(F("Could not read id."));
     return false;
   }
   
   //  Read in the length of the payload
   if (XBee.readBytes((byte *)&len, 1) != 1) {
-    Serial.println("Could not read id.");
+    Serial.println(F("Could not read id."));
     return false;
   }
 
   //  If payload size is 0, then it's invalid
   if (!len) {
+    Serial.println(F("Invalid length."));
     return false;
   }
 
@@ -62,7 +63,7 @@ bool Packet::read() {
   
   //  Read in the payload
   if (XBee.readBytes(data, len) != len) {
-    Serial.println("Could not read data.");
+    Serial.println(F("Could not read data."));
     return false;
   }
   
@@ -96,25 +97,25 @@ bool Packet::is_ours() {
 }
 
 void Packet::debugPrint() {
-    Serial.println("Packet recv:");
-    Serial.print("Origin: ");
+    Serial.println(F("Packet recv:"));
+    Serial.print(F("Origin: "));
     Serial.println(origin, HEX);
-    Serial.print("Destination: ");
+    Serial.print(F("Destination: "));
     Serial.println(dest, HEX);
-    Serial.print("Packet #: ");
+    Serial.print(F("Packet #: "));
     Serial.println(id, HEX);
-    Serial.print("Data Length: ");
+    Serial.print(F("Data Length: "));
     Serial.println(len, DEC);
-    Serial.print("Data: ");
+    Serial.print(F("Data: "));
 
     for (size_t i = 0; i < len; ++i) {
       if (i % 8 == 0) {
-        Serial.println("");
+        Serial.println(F(""));
       }
       
       Serial.print(data[i], HEX);
-      Serial.print(" ");
+      Serial.print(F(" "));
     }
-    Serial.println("");
+    Serial.println(F(""));
 }
 

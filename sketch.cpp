@@ -18,6 +18,15 @@ int main() {
   Serial.begin(9600);
   XBee.begin(9600);
 
+//  Config.setName("Test", 5);
+//  Config.setUUID(2);
+//  Config.setMinVoltage(0);
+//  Config.setMaxVoltage(5);
+//  Config.setMinValue(0);
+//  Config.setMaxValue(150);
+//  Config.setUnits("C", 2);
+//  Config.flush();
+
   Config.debugPrint();
 
   for (;;) {
@@ -35,6 +44,7 @@ void handleXBee() {
   if (XBee.available()) {
     Packet packet;
     if (!packet.is_good()) {
+      Serial.println(F("Packet wasn't good."));
       return;
     }
 
@@ -54,12 +64,12 @@ void handleXBee() {
     }
 
     if (packet.is_ours()) {
-      Serial.println("Received packet.");
+      Serial.println(F("Received packet."));
       byte payload[] = "Got it.";
       Packet response(packet.origin, payload, sizeof(payload));
       response.send();
     } else {
-      Serial.println("Not our problem.");
+      Serial.println(F("Not our problem."));
       packet.send();
     }
   }

@@ -3,13 +3,13 @@
 Configuration Config;
 
 Configuration::Configuration() {
-  Serial.println("Loading configuration");
+  Serial.println(F("Loading configuration"));
   EEPROM.get(0, _settings);
   debugPrint();
 }
 
 void Configuration::init() {
-  Serial.println("Loading configuration");
+  Serial.println(F("Loading configuration"));
   EEPROM.get(0, _settings);
   debugPrint();
 }
@@ -105,18 +105,18 @@ void Configuration::setUnits(char *units, size_t len) {
 }
 
 void Configuration::debugPrint() {
-  Serial.print("UUID: ");
+  Serial.print(F("UUID: "));
   Serial.println(_settings.uuid);
-  Serial.print("Name: ");
+  Serial.print(F("Name: "));
   Serial.println(_settings.name);
-  Serial.print("Min Voltage: ");
+  Serial.print(F("Min Voltage: "));
   Serial.println(_settings.min_vol);
-  Serial.print("Max Voltage: ");
+  Serial.print(F("Max Voltage: "));
   Serial.println(_settings.max_vol);
-  Serial.print("Min Value: ");
+  Serial.print(F("Min Value: "));
   Serial.println(_settings.min_val);
-  Serial.print("Max Value: ");
+  Serial.print(F("Max Value: "));
   Serial.println(_settings.max_val);
-  Serial.print("Units: ");
+  Serial.print(F("Units: "));
   Serial.println(_settings.units);
 }
