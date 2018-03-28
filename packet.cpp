@@ -15,7 +15,9 @@ Packet::Packet(uint32_t dest, byte *payload, size_t len)
 
 Packet::~Packet() {
   //  Since we allocate using new, we need to free the data with delete
-  delete[] data;
+  if (data) {
+    delete[] data;
+  }
 }
 
 uint32_t Packet::readU32(size_t offset) {
