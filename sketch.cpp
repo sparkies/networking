@@ -6,6 +6,7 @@
 #include "settings.hpp"
 
 void handleXBee();
+void handlePacket(Packet *packet);
 
 // XBee's DOUT (TX) is connected to pin 2 (Arduino's Software RX)
 // XBee's DIN (RX) is connected to pin 3 (Arduino's Software TX)
@@ -65,9 +66,7 @@ void handleXBee() {
 
     if (packet.is_ours()) {
       Serial.println(F("Received packet."));
-      byte payload[] = "Got it.";
-      Packet response(packet.origin, payload, sizeof(payload));
-      response.send();
+      handlePacket(&packet);
     } else {
       Serial.println(F("Not our problem."));
       packet.send();
@@ -75,4 +74,17 @@ void handleXBee() {
   }
 }
 
+void handlePacket(Packet *packet) {
+  //  Configuration response
+  if (packet->len == 1 && packet->data[0] == 'C') {
+    uint8_t *payload = nullptr;
+    size_t size = Config.serialize(payload);
+    Packet response(packet->origin, payload, size);
+    response.send();
+  } else {
+    byte payload[] = "OK";
+    Packet response(packet->origin, payload, sizeof(payload));
+    response.send();
+  }
+}
 
