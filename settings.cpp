@@ -104,6 +104,17 @@ void Configuration::setUnits(char *units, size_t len) {
   memcpy(_settings.units, units, min(10, len));
 }
 
+size_t Configuration::serialize(uint8_t *&output) {
+  output = reinterpret_cast<uint8_t *>(&_settings);
+  
+  for (int i = 0; i < 50; ++i) {
+    Serial.print(output[i]);
+    Serial.print(" ");
+  }
+  
+  return sizeof(_settings);
+}
+
 void Configuration::debugPrint() {
   Serial.print(F("UUID: "));
   Serial.println(_settings.uuid);

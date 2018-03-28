@@ -30,11 +30,13 @@ public:
 
   size_t getUnits(char *dest, size_t len);
   void setUnits(char *units, size_t len);
+
+  size_t serialize(uint8_t *&output);
   
   void debugPrint();
   
 private:
-  struct {
+  struct __attribute__ ((packed)) Data {
     uint32_t uuid;  //  Unique identifier for this node
     double min_vol; //  Minimum voltage to be read
     double max_vol; //  Maxiumum voltage to be read
