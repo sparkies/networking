@@ -40,7 +40,7 @@ private:
     double max_vol; //  Maxiumum voltage to be read
     double min_val; //  Minimum value that can be read
     double max_val; //  Maxiumum value that can be read
-    char name[100]; //  Name of this node
+    char name[20];  //  Name of this node
     char units[10]; //  Unit symbol for the values to be read
   } _settings;
 };
