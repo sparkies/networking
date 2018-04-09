@@ -7,6 +7,13 @@ Packet::Packet() {
   _good = read();
 }
 
+Packet::Packet(uint32_t dest)
+  : origin(Config.getUUID()),
+   dest(dest), id(packet_id++), 
+   len(0), data(nullptr), _good(true) 
+{
+}
+
 Packet::Packet(uint32_t dest, byte *payload, size_t len)
   : origin(Config.getUUID()), dest(dest), id(packet_id++), len(len), _good(true) {
   data = new byte[len];
@@ -28,6 +35,9 @@ bool Packet::read() {
   if (!XBee.available()) {
     Serial.println(F("XBee not available."));
     return false;
+  }
+
+  while (XBee.read() != START_BYTE) {
   }
 
   //  Read in the origin
@@ -73,8 +83,9 @@ bool Packet::read() {
 }
 
 void Packet::send() {
-  //  +13 is for 3 longs (4 bytes each) + length byte
-  byte payload[len + 13];
+  //  +14 is for start byte, 3 longs (4 bytes each), and length byte
+  byte payload[len + 14];
+  payload[0] = START_BYTE;
 
   //  Write each part of the header to its place in the payload
   //  This is so we can send the entire thing in one write call.
@@ -94,8 +105,16 @@ bool Packet::is_good() {
   return _good;
 }
 
+bool Packet::is_global() {
+  return dest == Packet::Any;
+}
+
 bool Packet::is_ours() {
   return dest == Config.getUUID();
+}
+
+bool Packet::is_same_origin() {
+  return origin == Config.getUUID();
 }
 
 void Packet::debugPrint() {

@@ -4,15 +4,18 @@
 #include <Arduino.h>
 #include <SoftwareSerial.h>
 
+const static byte START_BYTE = 0xA3;
+
 extern SoftwareSerial XBee;
 
 /// Offsets expected for each packet read
 enum Offset : uint8_t {
-  Origin = 0,
-  Destination = 4,
-  PacketId = 8,
-  Length = 12,
-  Payload = 13,
+  Start = 0,
+  Origin = 1,
+  Destination = 5,
+  PacketId = 9,
+  Length = 13,
+  Payload = 14,
 };
 
 /// Holds packet information as well as methods that help
@@ -25,12 +28,16 @@ struct Packet {
   uint8_t len;
 private:
   bool _good;
+  const static uint32_t Any = 0xFFFFFFFF;
 
 public:
   /// Default constructor will automatically populate the packet
   /// by calling the read method internally. To determine whether
   /// or not the packet read was well-formatted, call is_good.
   Packet();
+
+  /// Creates an empty packet with a given destination set.
+  Packet(uint32_t dest);
 
   /// Creates a packet for this device given the destination and payload.
   ///
@@ -72,6 +79,12 @@ public:
 
   /// Returns whether or not this packet is destined for this node.
   bool is_ours();
+
+  /// Returns whether or not this packet is destined for any nodes.
+  bool is_global();
+
+  /// Returns whether this packet was originally sent by this node.
+  bool is_same_origin();
 
   /// Prints the packet information to the serial port.
   void debugPrint();
