@@ -106,12 +106,6 @@ void Configuration::setUnits(char *units, size_t len) {
 
 size_t Configuration::serialize(uint8_t *&output) {
   output = reinterpret_cast<uint8_t *>(&_settings);
-  
-  for (int i = 0; i < 50; ++i) {
-    Serial.print(output[i]);
-    Serial.print(" ");
-  }
-  
   return sizeof(_settings);
 }
 

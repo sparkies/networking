@@ -104,7 +104,12 @@ void handlePacket(Packet *packet) {
     broadcasting = true;
   } else if (packet->len == 1 && packet->data[0] == 'S') {
     broadcasting = false;
-  } else {
+  } else if (packet->len == 1 && packet->data[0] == 'I') {
+    byte *output;
+    int length = Config.serialize(output);
+    Packet response(packet->origin, output, length);
+    response.send();
+  } else if (packet->len == 1 && packet->data[0] == 'P') {
     byte payload[] = "OK";
     Packet response(packet->origin, payload, sizeof(payload));
     response.send();
