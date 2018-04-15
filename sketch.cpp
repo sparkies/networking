@@ -5,7 +5,7 @@
 #include "packet.hpp"
 #include "settings.hpp"
 
-bool broadcasting = false;
+bool broadcasting = true;
 
 void handleXBee();
 void handlePacket(Packet *packet);
@@ -21,8 +21,10 @@ int main() {
   Serial.begin(9600);
   XBee.begin(9600);
 
-//  Config.setName("Test", 5);
-//  Config.setUUID(2);
+//  uint32_t relay_ids[] = {0, 3};
+//  Config.setRelay(relay_ids, 2);
+//  Config.setName("Test 2", 5);
+//  Config.setUUID(10);
 //  Config.setMinVoltage(0);
 //  Config.setMaxVoltage(5);
 //  Config.setMinValue(0);
@@ -50,6 +52,8 @@ int main() {
       int analog = analogRead(1);
       Packet response(0, reinterpret_cast<uint8_t *>(&analog), sizeof(analog));
       response.send();
+      Packet relay(3, reinterpret_cast<uint8_t *>(&analog), sizeof(analog));
+      relay.send();
     }
   }
 }
