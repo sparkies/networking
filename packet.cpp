@@ -38,6 +38,7 @@ bool Packet::read() {
   }
 
   while (XBee.read() != START_BYTE) {
+    Serial.println("No start byte");
   }
 
   //  Read in the origin
