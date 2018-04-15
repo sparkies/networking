@@ -5,7 +5,10 @@
 #include "packet.hpp"
 #include "settings.hpp"
 
+const int LIGHT_PIN = 8;
+
 bool broadcasting = true;
+bool light_on = false;
 
 void handleXBee();
 void handlePacket(Packet *packet);
@@ -24,7 +27,7 @@ int main() {
 //  uint32_t relay_ids[] = {0, 3};
 //  Config.setRelay(relay_ids, 2);
 //  Config.setName("Test 2", 5);
-//  Config.setUUID(10);
+//  Config.setUUID(3);
 //  Config.setMinVoltage(0);
 //  Config.setMaxVoltage(5);
 //  Config.setMinValue(0);
@@ -49,11 +52,8 @@ int main() {
     if (broadcasting && last_check + timeout < millis()) {
       Serial.println("Sending reading.");
       last_check = millis();
-      int analog = analogRead(1);
-      Packet response(0, reinterpret_cast<uint8_t *>(&analog), sizeof(analog));
+      Packet response(2, reinterpret_cast<uint8_t *>(&light_on), sizeof(uint8_t));
       response.send();
-      Packet relay(3, reinterpret_cast<uint8_t *>(&analog), sizeof(analog));
-      relay.send();
     }
   }
 }
@@ -98,8 +98,18 @@ void handleXBee() {
 }
 
 void handlePacket(Packet *packet) {
+  if (packet->origin == 2) {
+      uint16_t value = *(reinterpret_cast<uint16_t *>(packet->data));
+
+      Serial.print("Value from 2: ");
+      Serial.println(value);
+
+      light_on = value > 50;
+
+      digitalWrite(LIGHT_PIN, light_on ? HIGH : LOW);
+  }
   //  Configuration response
-  if (packet->len == 1 && packet->data[0] == 'C') {
+  else if (packet->len == 1 && packet->data[0] == 'C') {
     uint8_t *payload = nullptr;
     size_t size = Config.serialize(payload);
     Packet response(packet->origin, payload, size);
