@@ -9,6 +9,7 @@ const int LIGHT_PIN = 8;
 
 bool broadcasting = true;
 bool light_on = false;
+uint32_t last_millis = 0;
 
 void handleXBee();
 void handlePacket(Packet *packet);
@@ -49,11 +50,17 @@ int main() {
     //  Handle updates through XBee
     handleXBee();
 
+    digitalWrite(LIGHT_PIN, light_on ? HIGH : LOW);
+
     if (broadcasting && last_check + timeout < millis()) {
       Serial.println("Sending reading.");
       last_check = millis();
       Packet response(2, reinterpret_cast<uint8_t *>(&light_on), sizeof(uint8_t));
       response.send();
+
+      if (light_on && last_check - last_millis > 5000) {
+        light_on = false;
+      }
     }
   }
 }
@@ -98,15 +105,12 @@ void handleXBee() {
 }
 
 void handlePacket(Packet *packet) {
-  if (packet->origin == 2) {
-      uint16_t value = *(reinterpret_cast<uint16_t *>(packet->data));
-
-      Serial.print("Value from 2: ");
-      Serial.println(value);
-
-      light_on = value > 50;
-
+  if (packet->origin == 2 && packet->data[0] == '1') {
+    last_millis = millis();
+    if (!light_on) {
+      light_on = true;
       digitalWrite(LIGHT_PIN, light_on ? HIGH : LOW);
+    }
   }
   //  Configuration response
   else if (packet->len == 1 && packet->data[0] == 'C') {
