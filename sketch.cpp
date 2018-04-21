@@ -47,13 +47,17 @@ int main() {
     handleXBee();
 
     if (broadcasting && last_check + timeout < millis()) {
-      Serial.println("Sending reading.");
+      Serial.println("Sending reading (1).");
       last_check = millis();
-      int analog = analogRead(1);
-      Packet response(0, reinterpret_cast<uint8_t *>(&analog), sizeof(analog));
+      Packet response(0, "1", 1);
       response.send();
-      Packet relay(3, reinterpret_cast<uint8_t *>(&analog), sizeof(analog));
+      Packet relay(3, "1", 1);
       relay.send();
+//      int analog = analogRead(1);
+//      Packet response(0, reinterpret_cast<uint8_t *>(&analog), sizeof(analog));
+//      response.send();
+//      Packet relay(3, reinterpret_cast<uint8_t *>(&analog), sizeof(analog));
+//      relay.send();
     }
   }
 }
