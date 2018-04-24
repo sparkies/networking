@@ -1,10 +1,11 @@
+#include "log.hpp"
 #include "packet.hpp"
 #include "settings.hpp"
 
 uint32_t packet_id = 0;
 
 Packet::Packet() {
-  _good = read();
+  _good = false;
 }
 
 Packet::Packet(uint32_t dest)
@@ -33,41 +34,47 @@ uint32_t Packet::readU32(size_t offset) {
 
 bool Packet::read() {
   if (!XBee.available()) {
-    Serial.println(F("XBee not available."));
+    logmsg(F("XBee not available."));
     return false;
   }
 
-  while (XBee.read() != START_BYTE) {
-    Serial.println("No start byte");
+  int tries = 0;
+  while (XBee.read() != START_BYTE && tries < 100) {
+    logmsg(F("No start byte"));
+    tries++;
+  }
+
+  if (tries >= 1000) {
+    return false;
   }
 
   //  Read in the origin
   if (XBee.readBytes((byte *)&origin, 4) != 4) {
-    Serial.println(F("Could not read origin."));
+    logmsg(F("Could not read origin."));
     return false;
   }
   
   //  Read in the destination
   if (XBee.readBytes((byte *)&dest, 4) != 4) {
-    Serial.println(F("Could not read destination."));
+    logmsg(F("Could not read destination."));
     return false;
   }
   
   //  Read in the packet id
   if (XBee.readBytes((byte *)&id, 4) != 4) {
-    Serial.println(F("Could not read id."));
+    logmsg(F("Could not read id."));
     return false;
   }
   
   //  Read in the length of the payload
   if (XBee.readBytes((byte *)&len, 1) != 1) {
-    Serial.println(F("Could not read id."));
+    logmsg(F("Could not read id."));
     return false;
   }
 
   //  If payload size is 0, then it's invalid
   if (!len) {
-    Serial.println(F("Invalid length."));
+    logmsg(F("Invalid length."));
     return false;
   }
 
@@ -76,7 +83,7 @@ bool Packet::read() {
   
   //  Read in the payload
   if (XBee.readBytes(data, len) != len) {
-    Serial.println(F("Could not read data."));
+    logmsg(F("Could not read data."));
     return false;
   }
   
@@ -100,6 +107,18 @@ void Packet::send() {
   
   //  Send packet
   XBee.write(payload, sizeof(payload));
+}
+
+void Packet::send_to(uint32_t dest, byte *payload, size_t length) {
+  if (length > 255) {
+    logmsg(F("Invalid packet length."));
+  }
+  this->dest = dest;
+  this->data = payload;
+  this->len = length;
+
+  this->send();
+  packet_id++;
 }
 
 bool Packet::is_good() {

@@ -74,6 +74,12 @@ public:
   /// in the class.
   void send();
 
+  /// Sends the given payload to the given destination
+  ///
+  /// This method automatically formats the header using the data
+  /// in the class.
+  void send_to(uint32_t dest, byte *payload, size_t length);
+
   /// Returns whether or not the last read call succeeded or not.
   bool is_good();
 
