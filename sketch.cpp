@@ -1,18 +1,56 @@
 #include <Arduino.h>
 #include <SoftwareSerial.h>
 
+//#include <initializer_list>
+
+#define DEBUG
+#define LOG
+#include "log.hpp"
+
 #include "cache.hpp"
 #include "packet.hpp"
 #include "settings.hpp"
 
+#define NODE_NAME       "Test Relay 2"
+#define NODE_UNITS      ""
+#define NODE_UUID       6
+#define NODE_MINVOLTAGE 0
+#define NODE_MAXVOLTAGE 5
+#define NODE_MINVALUE   0
+#define NODE_MAXVALUE   0
+
+/// Broadcast data to each of the given nodes.
+/// Only used when NodeType is Sender (i.e., send to server and endpoint node)
+const uint32_t NODE_BROADCAST[] = {0, 2};
+/// Broadcast data to a given node.
+/// Only used for endpoint nodes to send data to the node they are linked to.
+const uint32_t NODE_DIRECT[] = {2};
+
+const uint8_t NODE_ANALOG_PIN = 0;
+const uint32_t BROADCAST_TIMEOUT = 1000;
+
+enum class NodeType {
+  Relay,
+  Endpoint,
+  Sender
+};
+
+#define NODE_TYPE       NodeType::Relay
+
+/// Data for light configuration
 const int LIGHT_PIN = 8;
+const int LIGHT_TIMEOUT = 1000;
 
 bool broadcasting = true;
 bool light_on = false;
 uint32_t last_millis = 0;
 
+bool can_send(uint32_t last_check);
+void init_config();
 void handleXBee();
 void handlePacket(Packet *packet);
+
+static Packet inbound;
 
 // XBee's DOUT (TX) is connected to pin 2 (Arduino's Software RX)
 // XBee's DIN (RX) is connected to pin 3 (Arduino's Software TX)
@@ -25,21 +63,11 @@ int main() {
   Serial.begin(9600);
   XBee.begin(9600);
 
-//  uint32_t relay_ids[] = {0, 3};
-//  Config.setRelay(relay_ids, 2);
-//  Config.setName("Test 2", 5);
-//  Config.setUUID(3);
-//  Config.setMinVoltage(0);
-//  Config.setMaxVoltage(5);
-//  Config.setMinValue(0);
-//  Config.setMaxValue(150);
-//  Config.setUnits("C", 2);
-//  Config.flush();
-
-  Config.debugPrint();
+  init_config();
 
   uint32_t timeout = 1 * 1000; // Wait 60 seconds per sample
   uint32_t last_check = millis();
+  Packet *response = new Packet();
   
   for (;;) {
     //  Serial passthrough to XBee
@@ -50,87 +78,124 @@ int main() {
     //  Handle updates through XBee
     handleXBee();
 
-    digitalWrite(LIGHT_PIN, light_on ? HIGH : LOW);
+    if (NODE_TYPE == NodeType::Endpoint) {
+      digitalWrite(LIGHT_PIN, light_on ? HIGH : LOW);
+    }
 
-    if (broadcasting && last_check + timeout < millis()) {
-      Serial.println("Sending reading.");
-      last_check = millis();
-      Packet response(2, reinterpret_cast<uint8_t *>(&light_on), sizeof(uint8_t));
-      response.send();
+    if (can_send(last_check)) {
+      if (NODE_TYPE == NodeType::Endpoint) {
+        logmsg(F("Sending light reading."));
+        last_check = millis();
 
-      if (light_on && last_check - last_millis > 5000) {
-        light_on = false;
+        for (auto&& node : NODE_DIRECT) {
+          response->send_to(node, reinterpret_cast<uint8_t *>(&light_on), sizeof(uint8_t));
+        }
+        
+        if (light_on && last_check - last_millis > LIGHT_TIMEOUT) {
+          light_on = false;
+        }
+      } else if (NODE_TYPE == NodeType::Sender) {
+        logmsg(F("Sending analog reading"));
+        last_check = millis();
+        int reading = analogRead(NODE_ANALOG_PIN);
+        
+        for (auto&& node : NODE_BROADCAST) {
+          response->send_to(node, reinterpret_cast<uint8_t *>(&reading), sizeof(int));
+        }
       }
     }
   }
 }
 
+bool can_send(uint32_t last_check) {
+  return last_check + BROADCAST_TIMEOUT < millis();
+}
+
+void init_config() {
+  Config.setName(NODE_NAME, strlen(NODE_NAME));
+  Config.setUUID(NODE_UUID);
+  Config.setMinVoltage(NODE_MINVOLTAGE);
+  Config.setMaxVoltage(NODE_MAXVOLTAGE);
+  Config.setMinValue(NODE_MINVALUE);
+  Config.setMaxValue(NODE_MAXVALUE);
+  Config.setUnits(NODE_UNITS, strlen(NODE_UNITS));
+  Config.flush();
+
+  #ifdef DEBUG
+    Config.debugPrint();
+  #endif
+}
+
 void handleXBee() {
   if (XBee.available()) {
-    Packet packet;
-    if (!packet.is_good()) {
-      Serial.println(F("Packet wasn't good."));
+    if (!inbound.read()) {
+      logmsg(F("Packet wasn't good."));
       return;
     }
 
-    packet.debugPrint();
+    #ifdef DEBUG
+      inbound.debugPrint();
+    #endif
 
     CacheEntry entry;
     
-    if (Cache.has(packet.origin, &entry)) {
-      if (entry.id >= packet.id) {
-        Serial.println(F("Ignoring old packet."));
+    if (Cache.has(inbound.origin, &entry)) {
+      if (entry.id >= inbound.id) {
+        logmsg(F("Ignoring old packet."));
         return;
       } else {
-        entry.id = packet.id;
+        entry.id = inbound.id;
       }
     } else {
-      Cache.insert(packet.origin, packet.id);
+      logmsg(F("New origin found."));
+      Cache.insert(inbound.origin, inbound.id);
     }
 
-    if (packet.is_ours()) {
-      Serial.println(F("Received packet."));
-      handlePacket(&packet);
-    } else if (packet.is_global()) {
-      Serial.println(F("Received global packet."));
-      handlePacket(&packet);
-      packet.send();
-    } else if (packet.is_same_origin()) {
-      Serial.println(F("Same origin; dropping."));
+    if (inbound.is_ours()) {
+      logmsg(F("Received packet."));
+      handlePacket(&inbound);
+    } else if (inbound.is_global()) {
+      logmsg(F("Received global packet."));
+      handlePacket(&inbound);
+      inbound.send();
+    } else if (inbound.is_same_origin()) {
+      logmsg(F("Same origin; dropping."));
     } else {
-      Serial.println(F("Not our problem."));
-      packet.send();
+      logmsg(F("Not our problem."));
+      inbound.send();
     }
   }
 }
 
 void handlePacket(Packet *packet) {
-  if (packet->origin == 2 && packet->data[0] == '1') {
-    last_millis = millis();
-    if (!light_on) {
-      light_on = true;
-      digitalWrite(LIGHT_PIN, light_on ? HIGH : LOW);
-    }
-  }
+  static Packet *outbound = new Packet();
+  static bool init_once = true;
+  static uint8_t *configuration;
+  static uint8_t config_size;
+
+//  if (packet->origin == 2 && packet->data[0] == '1') {
+//    last_millis = millis();
+//    if (!light_on) {
+//      light_on = true;
+//      digitalWrite(LIGHT_PIN, light_on ? HIGH : LOW);
+//    }
+//  }
   //  Configuration response
-  else if (packet->len == 1 && packet->data[0] == 'C') {
-    uint8_t *payload = nullptr;
-    size_t size = Config.serialize(payload);
-    Packet response(packet->origin, payload, size);
-    response.send();
+  if (packet->len == 1 && packet->data[0] == 'C') {
+    //  If never initialized, initialize it now
+    if (init_once) {
+      config_size = Config.serialize(configuration);
+      init_once = false;
+    }
+    //  Send configuration to origin
+    outbound->send_to(packet->origin, configuration, config_size);
   } else if (packet->len == 1 && packet->data[0] == 'B') {
     broadcasting = true;
   } else if (packet->len == 1 && packet->data[0] == 'S') {
     broadcasting = false;
-  } else if (packet->len == 1 && packet->data[0] == 'I') {
-    byte *output;
-    int length = Config.serialize(output);
-    Packet response(packet->origin, output, length);
-    response.send();
   } else if (packet->len == 1 && packet->data[0] == 'P') {
-    byte payload[] = "OK";
-    Packet response(packet->origin, payload, sizeof(payload));
-    response.send();
+    char *payload = "OK";
+    outbound->send_to(packet->origin, payload, 2);
   }
 }
 
