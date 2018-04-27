@@ -4,8 +4,7 @@
 
 uint32_t packet_id = 0;
 
-Packet::Packet() {
-  _good = false;
+Packet::Packet() : origin(Config.getUUID()), dest(0), id(packet_id++), len(0), data(nullptr), _good(false) {
 }
 
 Packet::Packet(uint32_t dest)
@@ -116,9 +115,9 @@ void Packet::send_to(uint32_t dest, byte *payload, size_t length) {
   this->dest = dest;
   this->data = payload;
   this->len = length;
+  this->id = packet_id++;
 
   this->send();
-  packet_id++;
 }
 
 bool Packet::is_good() {

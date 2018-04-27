@@ -1,8 +1,6 @@
 #include <Arduino.h>
 #include <SoftwareSerial.h>
 
-//#include <initializer_list>
-
 #define DEBUG
 #define LOG
 #include "log.hpp"
@@ -11,9 +9,9 @@
 #include "packet.hpp"
 #include "settings.hpp"
 
-#define NODE_NAME       "Test Relay 2"
+#define NODE_NAME       "Light Endpoint 1"
 #define NODE_UNITS      ""
-#define NODE_UUID       6
+#define NODE_UUID       3
 #define NODE_MINVOLTAGE 0
 #define NODE_MAXVOLTAGE 5
 #define NODE_MINVALUE   0
@@ -21,7 +19,7 @@
 
 /// Broadcast data to each of the given nodes.
 /// Only used when NodeType is Sender (i.e., send to server and endpoint node)
-const uint32_t NODE_BROADCAST[] = {0, 2};
+const uint32_t NODE_BROADCAST[] = {0, 3};
 /// Broadcast data to a given node.
 /// Only used for endpoint nodes to send data to the node they are linked to.
 const uint32_t NODE_DIRECT[] = {2};
@@ -30,12 +28,12 @@ const uint8_t NODE_ANALOG_PIN = 0;
 const uint32_t BROADCAST_TIMEOUT = 1000;
 
 enum class NodeType {
-  Relay,
-  Endpoint,
-  Sender
+  Relay,    //  Nodes that just relay packets
+  Endpoint, //  Nodes that take in data and process it
+  Sender    //  Nodes that read data and send it
 };
 
-#define NODE_TYPE       NodeType::Relay
+#define NODE_TYPE       NodeType::Endpoint
 
 /// Data for light configuration
 const int LIGHT_PIN = 8;
@@ -173,13 +171,16 @@ void handlePacket(Packet *packet) {
   static uint8_t *configuration;
   static uint8_t config_size;
 
-//  if (packet->origin == 2 && packet->data[0] == '1') {
-//    last_millis = millis();
-//    if (!light_on) {
-//      light_on = true;
-//      digitalWrite(LIGHT_PIN, light_on ? HIGH : LOW);
-//    }
-//  }
+  if (NODE_TYPE == NodeType::Endpoint) {
+    light_on = false;
+    for (auto&& id : NODE_DIRECT) {
+      if (id == packet->origin) {
+        light_on = true;
+      }
+    }
+    last_millis = millis();
+  }
+
   //  Configuration response
   if (packet->len == 1 && packet->data[0] == 'C') {
     //  If never initialized, initialize it now
