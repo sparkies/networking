@@ -4,27 +4,22 @@
 
 uint32_t packet_id = 0;
 
-Packet::Packet() : origin(Config.getUUID()), dest(0), id(packet_id++), len(0), data(nullptr), _good(false) {
+Packet::Packet() : origin(Config.getUUID()), dest(0), id(packet_id++), len(0), _good(false) {
 }
 
 Packet::Packet(uint32_t dest)
   : origin(Config.getUUID()),
    dest(dest), id(packet_id++), 
-   len(0), data(nullptr), _good(true) 
+   len(0), _good(true) 
 {
 }
 
 Packet::Packet(uint32_t dest, byte *payload, size_t len)
   : origin(Config.getUUID()), dest(dest), id(packet_id++), len(len), _good(true) {
-  data = new byte[len];
   memcpy(data, payload, len);
 }
 
 Packet::~Packet() {
-  //  Since we allocate using new, we need to free the data with delete
-  if (data) {
-    delete[] data;
-  }
 }
 
 uint32_t Packet::readU32(size_t offset) {
@@ -113,10 +108,10 @@ void Packet::send_to(uint32_t dest, byte *payload, size_t length) {
     logmsg(F("Invalid packet length."));
   }
   this->dest = dest;
-  this->data = payload;
   this->len = length;
   this->id = packet_id++;
 
+  memcpy(data, payload, len);
   this->send();
 }
 

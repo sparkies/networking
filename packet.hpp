@@ -24,7 +24,7 @@ struct Packet {
   uint32_t origin;
   uint32_t dest;
   uint32_t id;
-  byte *data;
+  byte data[255];
   uint8_t len;
 private:
   bool _good;
