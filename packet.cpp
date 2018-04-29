@@ -80,6 +80,7 @@ bool Packet::read() {
   if (XBee.readBytes((byte *)&id, 4) != 4) {
     Serial.println(F("Could not read id."));
     return false;
+  }
   
   //  Read in the packet checksum
   if (XBee.readBytes((byte *)&checksum, 2) != 2) {
