@@ -32,12 +32,13 @@ enum class NodeType {
   Endpoint, //  Nodes that take in data and process it
   Sender    //  Nodes that read data and send it
 };
+const uint32_t BROADCAST_TIMEOUT = 3000;
 
 #define NODE_TYPE       NodeType::Endpoint
 
 /// Data for light configuration
-const int LIGHT_PIN = 8;
-const int LIGHT_TIMEOUT = 1000;
+const int LIGHT_PIN = 11;
+const int LIGHT_TIMEOUT = 5000;
 
 bool broadcasting = true;
 bool light_on = false;
