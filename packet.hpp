@@ -4,18 +4,19 @@
 #include <Arduino.h>
 #include <SoftwareSerial.h>
 
-const static byte START_BYTE = 0xA3;
+const static byte START_BYTES[] = {0xA3, 0xFF};
 
 extern SoftwareSerial XBee;
 
 /// Offsets expected for each packet read
 enum Offset : uint8_t {
   Start = 0,
-  Origin = 1,
-  Destination = 5,
-  PacketId = 9,
-  Length = 13,
-  Payload = 14,
+  Origin = 2,
+  Destination = 6,
+  PacketId = 10,
+  Checksum = 14,
+  Length = 16,
+  Payload = 17,
 };
 
 /// Holds packet information as well as methods that help
@@ -24,11 +25,14 @@ struct Packet {
   uint32_t origin;
   uint32_t dest;
   uint32_t id;
+  uint16_t checksum;
   byte data[255];
   uint8_t len;
 private:
   bool _good;
   const static uint32_t Any = 0xFFFFFFFF;
+
+  uint16_t calculateChecksum();
 
 public:
   /// Default constructor will automatically populate the packet
@@ -72,7 +76,7 @@ public:
   ///
   /// This method automatically formats the header using the data
   /// in the class.
-  void send();
+  void send(bool calculate_checksum = true);
 
   /// Sends the given payload to the given destination
   ///
