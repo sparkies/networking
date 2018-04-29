@@ -148,8 +148,11 @@ void handleXBee() {
       logmsg(F("New origin found."));
       Cache.insert(inbound.origin, inbound.id);
     }
-
-    if (inbound.is_ours()) {
+    
+    if (NODE_TYPE == NodeType::Relay) {
+      Serial.println(F("Sending packet."));
+      inbound.send(false);
+    } else if (inbound.is_ours()) {
       logmsg(F("Received packet."));
       handlePacket(&inbound);
     } else if (inbound.is_global()) {
